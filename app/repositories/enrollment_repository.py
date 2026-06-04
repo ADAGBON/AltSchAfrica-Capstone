@@ -1,5 +1,7 @@
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
+from app.core.exceptions import ConflictError
 from app.models.enrollment import Enrollment
 
 
@@ -42,7 +44,14 @@ class EnrollmentRepository:
     def create(self, user_id: int, course_id: int) -> Enrollment:
         enrollment = Enrollment(user_id=user_id, course_id=course_id)
         self.db.add(enrollment)
-        self.db.commit()
+        try:
+            self.db.commit()
+        except IntegrityError:
+            # The (user_id, course_id) unique constraint is the source of truth.
+            # If a concurrent request enrolled the same student first, surface a
+            # clean 409 instead of a 500.
+            self.db.rollback()
+            raise ConflictError("Already enrolled in this course")
         self.db.refresh(enrollment)
         return enrollment
 

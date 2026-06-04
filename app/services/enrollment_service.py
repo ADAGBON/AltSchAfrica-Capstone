@@ -29,6 +29,11 @@ class EnrollmentService:
         if enrolled_count >= course.capacity:
             raise ConflictError("Course is full")
 
+        # NOTE: count -> create is not atomic, so under heavy concurrency a course
+        # can marginally exceed capacity. The duplicate-enrollment case is fully
+        # protected by the DB unique constraint (see EnrollmentRepository.create).
+        # A hard capacity guarantee would require SELECT ... FOR UPDATE on the
+        # course row inside this transaction.
         return self.enrollment_repo.create(user_id=user.id, course_id=course_id)
 
     def deregister_student(self, user: User, course_id: int) -> None:
