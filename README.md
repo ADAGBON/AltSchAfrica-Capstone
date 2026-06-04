@@ -2,6 +2,8 @@
 
 A secure, database-backed RESTful API built with **FastAPI** for managing users, courses, and enrollments. The system implements JWT authentication, role-based access control (RBAC), and comprehensive automated tests.
 
+**Live API:** `https://<your-service-name>.onrender.com/docs` _(replace with your deployed URL)_
+
 ## Features
 
 - **Authentication**: JWT-based register and login with bcrypt password hashing
@@ -81,13 +83,37 @@ SECRET_KEY=your-long-random-production-secret
 
 The `api` service connects to PostgreSQL using hostname `db` inside the Docker network. Migrations run automatically on container start.
 
+## Deploying to Render
+
+The repo ships with a `Dockerfile`, so Render can build and run it directly. The container entrypoint runs `alembic upgrade head` and then starts the server, so migrations apply automatically on every deploy.
+
+1. **Create a PostgreSQL instance** — In the Render dashboard: *New → PostgreSQL*. Once it's created, copy its **Internal Database URL**.
+2. **Create the web service** — *New → Web Service*, connect this GitHub repo, and let Render auto-detect the `Dockerfile` (Runtime: **Docker**).
+3. **Set environment variables** on the web service:
+
+   | Key | Value |
+   |-----|-------|
+   | `DATABASE_URL` | The Postgres URL from step 1 (see note below) |
+   | `SECRET_KEY` | A long random string (e.g. `openssl rand -hex 32`) |
+
+4. **Deploy.** When the build finishes, your interactive docs are live at `https://<your-service-name>.onrender.com/docs`.
+
+> **Note 1 — URL scheme:** Render hands out database URLs that start with `postgres://`, but SQLAlchemy 2.0 only accepts `postgresql://`. Change the scheme when you paste it in: `postgresql://user:pass@host/dbname`.
+
+> **Note 2 — port binding:** Render sets a `PORT` environment variable it expects the app to listen on. The container exposes `8000`, which Render auto-detects for Docker services, so the default works. If you ever hit a port-binding error, change the last line of `docker-entrypoint.sh` to bind dynamically:
+> ```sh
+> exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8000}"
+> ```
+
+After deploying, create your admin user by opening a shell on the Render service and running `python -m scripts.seed_admin` with the `ADMIN_*` variables set (see "Creating an admin" below).
+
 ## Local Setup (without Docker)
 
 ### 1. Clone and create a virtual environment
 
 ```bash
-git clone <your-repo-url>
-cd Capstone_altsch
+git clone https://github.com/ADAGBON/AltSchAfrica-Capstone.git
+cd AltSchAfrica-Capstone
 python -m venv venv
 
 # Windows
