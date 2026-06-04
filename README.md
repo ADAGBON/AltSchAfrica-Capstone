@@ -2,7 +2,7 @@
 
 A secure, database-backed RESTful API built with **FastAPI** for managing users, courses, and enrollments. It implements JWT authentication, role-based access control (RBAC), PostgreSQL with Alembic migrations, and a full automated test suite.
 
-**Live API:** `https://<your-service-name>.onrender.com/docs` _(replace with your deployed URL)_
+**Live API:** https://altschafrica-capstone.onrender.com/docs
 
 ## Tech Stack
 
@@ -178,7 +178,7 @@ The repo ships with a `Dockerfile`, so Render can build and run it directly. The
    | `DATABASE_URL` | The Postgres URL from step 1 (see note below) |
    | `SECRET_KEY` | A long random string (e.g. `openssl rand -hex 32`) |
 
-4. **Deploy.** When the build finishes, your interactive docs are live at `https://<your-service-name>.onrender.com/docs`.
+4. **Deploy.** When the build finishes, your interactive docs are live — for this project, at https://altschafrica-capstone.onrender.com/docs.
 
 > **Note 1 — URL scheme:** Render hands out database URLs that start with `postgres://`, but SQLAlchemy 2.0 only accepts `postgresql://`. Change the scheme when you paste it in: `postgresql://user:pass@host/dbname`.
 
