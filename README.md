@@ -1,24 +1,32 @@
 # Course Enrollment Platform API
 
-A secure, database-backed RESTful API built with **FastAPI** for managing users, courses, and enrollments. The system implements JWT authentication, role-based access control (RBAC), and comprehensive automated tests.
+A secure, database-backed RESTful API built with **FastAPI** for managing users, courses, and enrollments. It implements JWT authentication, role-based access control (RBAC), PostgreSQL with Alembic migrations, and a full automated test suite.
 
+**Live API:** `https://<your-service-name>.onrender.com/docs` _(replace with your deployed URL)_
 
+## Tech Stack
+
+- **FastAPI** — web framework
+- **PostgreSQL** — relational database
+- **SQLAlchemy 2.0** — ORM
+- **Alembic** — database migrations
+- **python-jose** + **passlib/bcrypt** — JWT auth and password hashing
+- **pytest** — automated tests
 
 ## Features
 
-- **Authentication**: JWT-based register and login with bcrypt password hashing
-- **RBAC**: Separate permissions for `student` and `admin` roles
-- **Course management**: Public read access; admin-only create, update, activate/deactivate, delete
-- **Enrollment management**: Students enroll/deregister; admins oversee all enrollments
-- **Business rules**: Unique emails/course codes, capacity limits, duplicate enrollment prevention
-- **PostgreSQL** with Alembic migrations
-- **Layered architecture**: routers → services → repositories
+- JWT-based register and login with bcrypt password hashing
+- RBAC with separate `student` and `admin` permissions
+- Public course reads; admin-only create, update, activate/deactivate, delete
+- Student enroll/deregister; admin oversight of all enrollments
+- Business rules: unique emails and course codes, capacity limits, duplicate-enrollment and inactive-course prevention
+- Layered architecture: routers → services → repositories
 
 ## Project Structure
 
 ```
 app/
-├── core/           # Security, exceptions, HTTP helpers
+├── core/           # Security, exceptions
 ├── models/         # SQLAlchemy ORM models
 ├── schemas/        # Pydantic request/response models
 ├── repositories/   # Database access layer
@@ -30,46 +38,47 @@ app/
 └── main.py
 alembic/            # Database migrations
 tests/              # Automated API tests
+scripts/            # Admin-seeding utility
 Dockerfile          # API container image
 docker-compose.yml  # PostgreSQL + API stack
 ```
 
 ## Prerequisites
 
-**Local development**
+- **Docker option:** Docker Desktop (or Docker Engine + Docker Compose v2)
+- **Local option:** Python 3.11+ and PostgreSQL 14+
 
-- Python 3.11+
-- PostgreSQL 14+
+---
 
-**Docker deployment**
+## Setup Instructions
 
-- Docker Desktop (or Docker Engine + Docker Compose v2)
+You can run the project either with Docker (simplest) or locally with your own Python environment.
 
-## Docker Deployment (recommended)
+### Option A — Docker (recommended)
 
-Run the full stack (PostgreSQL + API + automatic migrations) with one command:
+This builds the API, starts PostgreSQL, **runs migrations automatically**, and launches the server with a single command:
 
 ```bash
+git clone https://github.com/ADAGBON/AltSchAfrica-Capstone.git
+cd AltSchAfrica-Capstone
 docker compose up --build
 ```
 
-The API will be available at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
+Once it's running, the interactive API docs are at **http://127.0.0.1:8000/docs**.
 
-### Docker commands
+Useful Docker commands:
 
 | Command | Description |
 |---------|-------------|
 | `docker compose up --build` | Build images and start services |
 | `docker compose up -d` | Start in the background |
 | `docker compose down` | Stop and remove containers |
-| `docker compose down -v` | Stop and delete database volume |
+| `docker compose down -v` | Stop and delete the database volume |
 | `docker compose logs -f api` | Follow API logs |
 
+### Option B — Local (without Docker)
 
-
-## Local Setup (without Docker)
-
-### 1. Clone and create a virtual environment
+**1. Clone the repository and create a virtual environment**
 
 ```bash
 git clone https://github.com/ADAGBON/AltSchAfrica-Capstone.git
@@ -79,26 +88,26 @@ python -m venv venv
 # Windows
 venv\Scripts\activate
 
-# macOS/Linux
+# macOS / Linux
 source venv/bin/activate
 ```
 
-### 2. Install dependencies
+**2. Install dependencies**
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Configure environment
+**3. Configure environment variables**
 
-Copy the example env file and update values:
+Copy the example file and edit the values:
 
 ```bash
-copy .env.example .env   # Windows
-# cp .env.example .env   # macOS/Linux
+cp .env.example .env       # macOS / Linux
+# copy .env.example .env   # Windows
 ```
 
-Edit `.env`:
+`.env`:
 
 ```env
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/enrollment_db
@@ -107,43 +116,103 @@ ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 ```
 
-### 4. Create the database
+**4. Create the database**
 
 ```sql
 CREATE DATABASE enrollment_db;
 ```
 
-### 5. Run migrations
-
-```bash
-alembic upgrade head
-```
-
-### 6. Start the API
+**5. Run migrations** (see the section below), then **start the API:**
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-API docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+API docs: **http://127.0.0.1:8000/docs**
 
-## Running Tests
+---
 
-Tests use an in-memory SQLite database (no PostgreSQL required for tests):
+## How to Run Migrations
+
+The project uses **Alembic** for database migrations.
+
+- **With Docker:** migrations run automatically every time the container starts — you don't need to do anything.
+- **Locally:** apply all migrations to bring the database schema up to date:
+
+```bash
+alembic upgrade head
+```
+
+Other useful migration commands:
+
+```bash
+alembic current                                      # Show the current migration revision
+alembic downgrade -1                                 # Roll back the last migration
+alembic revision --autogenerate -m "your message"    # Generate a new migration
+```
+
+---
+
+## How to Run Tests
+
+The test suite uses an in-memory SQLite database, so **no PostgreSQL setup is required to run the tests**.
 
 ```bash
 pytest -v
 ```
 
+This runs the full suite covering every endpoint — authentication, user profile, course management, enrollment rules, and administrative oversight.
+
+---
+
+## Deploying to Render
+
+The repo ships with a `Dockerfile`, so Render can build and run it directly. The container entrypoint runs `alembic upgrade head` and then starts the server, so migrations apply automatically on every deploy.
+
+1. **Create a PostgreSQL instance** — In the Render dashboard: *New → PostgreSQL*. Once it's created, copy its **Internal Database URL**.
+2. **Create the web service** — *New → Web Service*, connect this GitHub repo, and let Render auto-detect the `Dockerfile` (Runtime: **Docker**).
+3. **Set environment variables** on the web service:
+
+   | Key | Value |
+   |-----|-------|
+   | `DATABASE_URL` | The Postgres URL from step 1 (see note below) |
+   | `SECRET_KEY` | A long random string (e.g. `openssl rand -hex 32`) |
+
+4. **Deploy.** When the build finishes, your interactive docs are live at `https://<your-service-name>.onrender.com/docs`.
+
+> **Note 1 — URL scheme:** Render hands out database URLs that start with `postgres://`, but SQLAlchemy 2.0 only accepts `postgresql://`. Change the scheme when you paste it in: `postgresql://user:pass@host/dbname`.
+
+> **Note 2 — port binding:** Render sets a `PORT` environment variable it expects the app to listen on. The container exposes `8000`, which Render auto-detects for Docker services, so the default works. If you ever hit a port-binding error, change the last line of `docker-entrypoint.sh` to bind dynamically:
+> ```sh
+> exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8000}"
+> ```
+
+After deploying, create your admin user by opening a shell on the Render service and running `python -m scripts.seed_admin` with the `ADMIN_*` variables set (see "Creating an Admin" below).
+
+---
+
+## Creating an Admin
+
+Public registration always creates a **student** (this prevents privilege escalation through the public endpoint). To create an admin, seed one directly:
+
+```bash
+ADMIN_NAME="Site Admin" \
+ADMIN_EMAIL="admin@example.com" \
+ADMIN_PASSWORD="a-long-strong-password" \
+python -m scripts.seed_admin
+```
+
+The script is idempotent and will promote an existing user to admin if the email already exists.
+
 ## API Endpoints
 
 | Method | Endpoint | Access | Description |
 |--------|----------|--------|-------------|
-| POST | `/auth/register` | Public | Register a user |
-| POST | `/auth/login` | Public | Login and receive JWT |
+| POST | `/auth/register` | Public | Register a user (always a student) |
+| POST | `/auth/login` | Public | Log in and receive a JWT |
 | GET | `/users/me` | Authenticated | Get current user profile |
 | GET | `/courses` | Public | List active courses |
-| GET | `/courses/{id}` | Public | Get course by ID |
+| GET | `/courses/{id}` | Public | Get a course by ID |
 | POST | `/courses` | Admin | Create a course |
 | PUT | `/courses/{id}` | Admin | Update a course |
 | PATCH | `/courses/{id}/activate` | Admin | Activate a course |
@@ -163,18 +232,14 @@ pytest -v
 | View courses | Yes | Yes |
 | Enroll in course | Yes | No |
 | Deregister from course | Yes | No |
-| Create/update/delete course | No | Yes |
+| Create / update / delete course | No | Yes |
 | View all enrollments | No | Yes |
 | Remove enrollment | No | Yes |
 
 ## Example Usage
 
-### Register and login
-
-Public registration always creates a **student**. (Admins are provisioned
-separately — see "Creating an admin" below.)
-
 ```bash
+# Register and log in
 curl -X POST http://127.0.0.1:8000/auth/register \
   -H "Content-Type: application/json" \
   -d '{"name":"Alice","email":"alice@uni.com","password":"password123"}'
@@ -182,41 +247,11 @@ curl -X POST http://127.0.0.1:8000/auth/register \
 curl -X POST http://127.0.0.1:8000/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"alice@uni.com","password":"password123"}'
-```
 
-Use the returned `access_token` in subsequent requests:
-
-```bash
+# Use the returned access_token for authenticated requests
 curl http://127.0.0.1:8000/users/me \
   -H "Authorization: Bearer <your_token>"
 ```
-
-### Creating an admin
-
-The public endpoint cannot create admins (that would be a privilege-escalation
-hole). Seed one out-of-band instead:
-
-```bash
-ADMIN_NAME="Site Admin" \
-ADMIN_EMAIL="admin@example.com" \
-ADMIN_PASSWORD="a-long-strong-password" \
-python -m scripts.seed_admin
-```
-
-The script is idempotent and will promote an existing user to admin if the
-email already exists.
-
-## Assessment Alignment
-
-This project addresses all core requirements:
-
-- JWT authentication with hashed passwords
-- PostgreSQL relational database with migrations
-- RBAC for students and admins
-- Enrollment business rules (capacity, duplicates, inactive courses)
-- Request validation and meaningful error responses
-- Automated tests for every endpoint
-- Service/repository layered architecture
 
 ## License
 
