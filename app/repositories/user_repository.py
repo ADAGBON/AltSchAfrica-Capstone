@@ -19,9 +19,3 @@ class UserRepository:
         self.db.commit()
         self.db.refresh(user)
         return user
-
-    def update_active_status(self, user: User, is_active: bool) -> User:
-        user.is_active = is_active
-        self.db.commit()
-        self.db.refresh(user)
-        return user

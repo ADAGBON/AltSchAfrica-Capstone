@@ -16,9 +16,6 @@ class CourseRepository:
     def get_all_active(self) -> list[Course]:
         return self.db.query(Course).filter(Course.is_active.is_(True)).all()
 
-    def get_all(self) -> list[Course]:
-        return self.db.query(Course).all()
-
     def create(self, title: str, code: str, capacity: int) -> Course:
         course = Course(title=title, code=code, capacity=capacity, is_active=True)
         self.db.add(course)
@@ -27,9 +24,11 @@ class CourseRepository:
         return course
 
     def update(self, course: Course, **kwargs) -> Course:
+        # Callers pass only the fields they intend to change (the service uses
+        # model_dump(exclude_unset=True)), so every provided kwarg is applied —
+        # including explicit False/None values.
         for key, value in kwargs.items():
-            if value is not None:
-                setattr(course, key, value)
+            setattr(course, key, value)
         self.db.commit()
         self.db.refresh(course)
         return course
