@@ -185,10 +185,13 @@ pytest -v
 
 ### Register and login
 
+Public registration always creates a **student**. (Admins are provisioned
+separately — see "Creating an admin" below.)
+
 ```bash
 curl -X POST http://127.0.0.1:8000/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"name":"Alice","email":"alice@uni.com","password":"password123","role":"student"}'
+  -d '{"name":"Alice","email":"alice@uni.com","password":"password123"}'
 
 curl -X POST http://127.0.0.1:8000/auth/login \
   -H "Content-Type: application/json" \
@@ -201,6 +204,21 @@ Use the returned `access_token` in subsequent requests:
 curl http://127.0.0.1:8000/users/me \
   -H "Authorization: Bearer <your_token>"
 ```
+
+### Creating an admin
+
+The public endpoint cannot create admins (that would be a privilege-escalation
+hole). Seed one out-of-band instead:
+
+```bash
+ADMIN_NAME="Site Admin" \
+ADMIN_EMAIL="admin@example.com" \
+ADMIN_PASSWORD="a-long-strong-password" \
+python -m scripts.seed_admin
+```
+
+The script is idempotent and will promote an existing user to admin if the
+email already exists.
 
 ## Assessment Alignment
 
