@@ -12,7 +12,10 @@ RUN apt-get update \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY alembic.ini alembic/ app/ ./
+COPY alembic.ini ./
+COPY alembic/ ./alembic/
+COPY app/ ./app/
+COPY scripts/ ./scripts/
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN sed -i 's/\r$//' /docker-entrypoint.sh && chmod +x /docker-entrypoint.sh
 
