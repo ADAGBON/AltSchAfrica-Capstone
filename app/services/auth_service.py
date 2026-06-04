@@ -15,11 +15,13 @@ class AuthService:
         if self.user_repo.get_by_email(data.email):
             raise ConflictError("Email already registered")
 
+        # Public registration always creates a student. Never trust a
+        # client-supplied role here — admins are seeded out-of-band.
         user = self.user_repo.create(
             name=data.name,
             email=data.email,
             hashed_password=hash_password(data.password),
-            role=data.role,
+            role=UserRole.student,
         )
         return user
 

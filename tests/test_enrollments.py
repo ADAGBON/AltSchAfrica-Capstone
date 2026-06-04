@@ -47,7 +47,6 @@ def test_enroll_full_course_fails(client, admin_user):
             "name": "Student A",
             "email": "a@test.com",
             "password": "password123",
-            "role": "student",
         },
     )
     client.post(
@@ -56,7 +55,6 @@ def test_enroll_full_course_fails(client, admin_user):
             "name": "Student B",
             "email": "b@test.com",
             "password": "password123",
-            "role": "student",
         },
     )
 
